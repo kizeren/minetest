@@ -33,7 +33,7 @@ RUN git clone --recursive https://github.com/jupp0r/prometheus-cpp/ && \
 	cd /usr/src/ && \
 	git clone --depth=1 https://github.com/minetest/irrlicht/ -b ${IRRLICHT_VERSION} && \
 		cp -r irrlicht/include /usr/include/irrlichtmt
-
+        
 FROM dev as builder
 
 COPY .git /usr/src/minetest/.git
@@ -67,20 +67,20 @@ FROM $DOCKER_IMAGE AS runtime
 
 RUN apk add --no-cache curl gmp libstdc++ libgcc libpq jsoncpp zstd-libs \
 				sqlite-libs postgresql hiredis leveldb && \
-	adduser -D minetest --uid 30000 -h /var/lib/minetest && \
-	chown -R minetest:minetest /var/lib/minetest
+	adduser -D minetest --uid 30000 -h /config && \
+	chown -R minetest:minetest /config
 
-WORKDIR /var/lib/minetest
+WORKDIR /config/.minetest
 
 COPY --from=builder /usr/local/share/minetest /usr/local/share/minetest
 COPY --from=builder /usr/local/bin/minetestserver /usr/local/bin/minetestserver
-COPY --from=builder /usr/local/share/doc/minetest/minetest.conf.example /etc/minetest/minetest.conf
+COPY --from=builder /usr/local/share/doc/minetest/minetest.conf.example /config/.minetest/minetest.conf
 COPY --from=builder /usr/local/lib/libspatialindex* /usr/local/lib/
 COPY --from=builder /usr/local/lib/libluajit* /usr/local/lib/
 USER minetest:minetest
 
 EXPOSE 30000/udp 30000/tcp
-VOLUME /var/lib/minetest/ /etc/minetest/
+VOLUME /config/.minetest
 
 ENTRYPOINT ["/usr/local/bin/minetestserver"]
-CMD ["--config", "/etc/minetest/minetest.conf"]
+CMD ["--config", "/config/.minetest/minetest.conf"]
